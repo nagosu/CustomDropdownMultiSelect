@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>커스텀 드롭다운</title>
+    <style>
+      .dropdown {
+        position: relative;
+        display: inline-block;
+        width: 200px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 10px;
+        cursor: pointer;
+      }
+
+      .dropdown .selected {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .dropdown .searchIcon {
+        width: 30px;
+        margin-left: 10px;
+        transition: transform 0.3s;
+      }
+
+      .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 105%;
+        left: 50%;
+        transform: translate(-50%, 0);
+        width: 100%;
+        max-height: 200px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background: #fff;
+        z-index: 1;
+        overflow-y: auto;
+      }
+
+      .dropdown-menu.active {
+        display: block;
+      }
+
+      .dropdown-menu div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        cursor: pointer;
+      }
+
+      .dropdown-menu div:hover {
+        background: #f0f0f0;
+      }
+
+      .dropdown-menu .selected-item-bg {
+        background: #d0e0ff;
+      }
+
+      .selected-items-container {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 300px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 10px;
+        min-height: 32px;
+      }
+
+      .selected-item {
+        display: inline-block;
+        border-radius: 4px;
+        padding: 2px 6px;
+        margin: 2px;
+        position: relative;
+      }
+
+      .selected-item .remove {
+        width: 16px;
+        height: 16px;
+        margin-left: 4px;
+        cursor: pointer;
+        background-color: #999;
+        border-radius: 50%;
+      }
+
+      .search-box {
+        width: 100%;
+        padding: 5px;
+        font-size: 1rem;
+        box-sizing: border-box;
+        border: none;
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dropdown">
+      <div class="selected">
+        <input
+          type="text"
+          class="search-box"
+          placeholder="지문 선택"
+          oninput="filterDropdown()"
+        />
+        <img src="./Search.svg" alt="검색" class="searchIcon" />
+      </div>
+      <div class="dropdown-menu">
+        <div>지문이름 1</div>
+        <div>지문이름 2</div>
+        <div>지문이름 3</div>
+        <div>지문이름 4</div>
+        <div>지문이름 5</div>
+        <div>지문이름 6</div>
+        <div>지문이름 7</div>
+        <div>지문이름 8</div>
+        <div>지문이름 9</div>
+      </div>
+    </div>
+    <div class="selected-items-container">
+      <!-- 선택된 항목이 여기에 표시됩니다 -->
+    </div>
+
+    <script>
+      // 드롭다운 토글
+      document.addEventListener("click", function (event) {
+        const dropdown = document.querySelector(".dropdown");
+        const dropdownMenu = document.querySelector(".dropdown-menu");
+
+        if (dropdown.contains(event.target)) {
+          dropdown.classList.toggle("active");
+          dropdownMenu.classList.toggle("active");
+        } else {
+          dropdown.classList.remove("active");
+          dropdownMenu.classList.remove("active");
+        }
+      });
+
+      let selectedPassages = []; // 선택된 항목을 저장할 배열
+
+      // 드롭다운 항목 클릭 이벤트
+      document.querySelectorAll(".dropdown-menu div").forEach(function (item) {
+        item.addEventListener("click", function (event) {
+          event.stopPropagation();
+          toggleSelectedItem(this.textContent);
+        });
+      });
+
+      // 선택된 항목 클릭 이벤트
+      function toggleSelectedItem(text) {
+        const container = document.querySelector(".selected-items-container");
+        const items = document.querySelectorAll(".selected-item");
+
+        // 선택된 항목이 이미 있는지 확인
+        let exists = false;
+        items.forEach(function (item) {
+          if (item.textContent.replace("x", "").trim() === text) {
+            container.removeChild(item);
+            selectedPassages = selectedPassages.filter(
+              (passage) => passage !== text
+            ); // 배열에서 항목 제거
+            exists = true;
+          }
+        });
+
+        // 이미 선택된 항목이 아니라면 추가
+        if (!exists) {
+          const selectedItem = document.createElement("span");
+          selectedItem.className = "selected-item";
+          selectedItem.textContent = text;
+
+          const removeBtn = document.createElement("img");
+          removeBtn.className = "remove";
+          removeBtn.src = "./Close_round_light.svg";
+          removeBtn.alt = "삭제";
+          removeBtn.onclick = function () {
+            container.removeChild(selectedItem);
+            selectedPassages = selectedPassages.filter(
+              (passage) => passage !== text
+            ); // 배열에서 항목 제거
+            updateDropdown();
+          };
+
+          selectedItem.appendChild(removeBtn);
+          container.appendChild(selectedItem);
+          selectedPassages.push(text); // 배열에 항목 추가
+          console.log("selectedPassages :", selectedPassages);
+        }
+
+        // 드롭다운 항목 업데이트
+        updateDropdown();
+        // 선택된 항목 정렬
+        sortSelectedItems();
+      }
+
+      // 드롭다운 검색 기능
+      function filterDropdown() {
+        const input = document.querySelector(".search-box").value.toLowerCase();
+        const items = document.querySelectorAll(".dropdown-menu div");
+
+        items.forEach(function (item) {
+          if (item.textContent.toLowerCase().includes(input)) {
+            item.style.display = "";
+          } else {
+            item.style.display = "none";
+          }
+        });
+      }
+
+      // 드롭다운 항목 업데이트
+      function updateDropdown() {
+        const selectedItems = Array.from(
+          document.querySelectorAll(".selected-item")
+        ).map((item) => item.textContent.replace("x", "").trim());
+        const dropdownItems = document.querySelectorAll(".dropdown-menu div");
+
+        dropdownItems.forEach(function (item) {
+          if (selectedItems.includes(item.textContent)) {
+            item.classList.add("selected-item-bg");
+          } else {
+            item.classList.remove("selected-item-bg");
+          }
+        });
+      }
+
+      // 선택된 항목 정렬
+      function sortSelectedItems() {
+        const container = document.querySelector(".selected-items-container");
+        const items = Array.from(container.children);
+
+        items.sort((a, b) => {
+          if (a.textContent < b.textContent) return -1;
+          if (a.textContent > b.textContent) return 1;
+          return 0;
+        });
+
+        items.forEach((item) => container.appendChild(item));
+      }
+
+      // 초기 드롭다운 항목 업데이트
+      updateDropdown();
+    </script>
+  </body>
+</html>
